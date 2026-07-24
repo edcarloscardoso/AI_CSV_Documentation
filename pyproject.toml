@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-csv-query"
+version = "0.1.0"
+description = "Plataforma de consulta inteligente de dados CSV via linguagem natural"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.6.0",
+    "pydantic-ai>=0.0.14",
+    "duckdb>=0.10.0",
+    "streamlit>=1.32.0",
+    "plotly>=5.19.0",
+    "python-dotenv>=1.0.1",
+    "loguru>=0.7.2",
+    "python-multipart>=0.0.9"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
+    "ruff>=0.3.0",
+    "mypy>=1.8.0"
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "N", "UP", "PL", "RUF"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
