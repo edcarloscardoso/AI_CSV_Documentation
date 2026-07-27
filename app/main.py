@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from loguru import logger
 
 from api.exceptions import AppBaseError
-from api.routes import datasets_router, upload_router
+from api.routes import datasets_router, query_router, upload_router
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -23,6 +23,8 @@ app = FastAPI(
 # Registra os roteadores de endpoints da API
 app.include_router(upload_router)
 app.include_router(datasets_router)
+app.include_router(query_router)
+
 
 
 @app.get("/", include_in_schema=False)
@@ -39,6 +41,24 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS", "DELETE"],
     allow_headers=["*"],
 )
+
+
+from fastapi.exceptions import RequestValidationError
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """Handler para erros de validação HTTP 422 (campos ausentes ou formatos incorretos)."""
+    logger.warning(f"Erro de validação 422 em {request.url.path}: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "ValidationError",
+            "detail": "Erro de validação nos dados enviados na requisição. Verifique os campos obrigatórios.",
+            "code": "VALIDATION_ERROR",
+            "errors": exc.errors(),
+        },
+    )
 
 
 @app.exception_handler(AppBaseError)
