@@ -53,3 +53,29 @@ class ErrorResponse(BaseModel):
     error: str = Field(..., description="Nome da exceção gerada")
     detail: str = Field(..., description="Mensagem de erro detalhada")
     code: str = Field(..., description="Código único do erro para consumo de clientes")
+
+
+class QuestionRequest(BaseModel):
+    """Modelo de requisição para o endpoint POST /ask."""
+
+    dataset_id: str = Field(..., description="ID único do dataset a ser consultado")
+    question: str = Field(..., description="Pergunta do usuário em linguagem natural")
+    session_id: str | None = Field(default=None, description="Identificador opcional da sessão")
+
+
+class ChartSpec(BaseModel):
+    """Especificação de gráfico Plotly."""
+
+    chart_type: Literal["bar", "line", "pie", "histogram", "scatter"] = Field(..., description="Tipo de gráfico")
+    plotly_spec: dict[str, Any] = Field(..., description="Especificação JSON do Plotly")
+
+
+class QuestionResponse(BaseModel):
+    """Modelo de resposta do endpoint POST /ask."""
+
+    answer_text: str = Field(..., description="Resposta explicativa em linguagem natural")
+    answer_type: Literal["text", "table", "chart", "mixed"] = Field(..., description="Tipo da resposta primária")
+    table_data: list[dict[str, Any]] | None = Field(default=None, description="Dados estruturados em tabela")
+    chart_spec: ChartSpec | None = Field(default=None, description="Especificação do gráfico Plotly")
+    sql_used: str | None = Field(default=None, description="Consulta SQL executada")
+

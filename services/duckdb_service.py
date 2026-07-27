@@ -86,8 +86,41 @@ class DuckDBService:
             logger.error(f"Erro inesperado no DuckDB: {e}")
             raise SQLExecutionError(f"Erro na execução da consulta: {e!s}") from e
 
+    def _ensure_utf8(self, csv_path: Path) -> tuple[Path, bool]:
+        """Garante que o CSV esteja em UTF-8. Converte se necessário.
+
+        Retorna (caminho_do_arquivo, foi_convertido).
+        latin-1 decodifica qualquer sequência de bytes de 1 byte sem falhar,
+        tornando esta conversão 100% segura para arquivos governamentais brasileiros.
+        """
+        raw = csv_path.read_bytes()
+        try:
+            raw.decode("utf-8")
+            return csv_path, False  # Já está em UTF-8, sem conversão necessária
+        except UnicodeDecodeError:
+            pass
+
+        # Decodifica como latin-1 (aceita qualquer byte único) e reescreve em UTF-8
+        import tempfile
+        text = raw.decode("latin-1")
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", suffix=".csv", delete=False
+        )
+        tmp.write(text)
+        tmp.flush()
+        tmp.close()
+        logger.info(
+            f"Arquivo '{csv_path.name}' convertido de latin-1 para UTF-8 "
+            f"(arquivo temporário: {tmp.name})"
+        )
+        return Path(tmp.name), True
+
     def register_csv_view(self, table_name: str, csv_path: str | Path) -> None:
-        """Cria ou substitui uma VIEW no DuckDB apontando diretamente para um arquivo CSV."""
+        """Cria ou substitui uma TABLE no DuckDB apontando diretamente para um arquivo CSV.
+
+        Converte automaticamente para UTF-8 se o arquivo não estiver nesse encoding.
+        Arquivos governamentais brasileiros (NFe, SEFAZ) frequentemente usam Latin-1.
+        """
         path = Path(csv_path).resolve()
         if not path.exists():
             raise FileNotFoundError(f"Arquivo CSV não encontrado: {path}")
@@ -96,19 +129,50 @@ class DuckDBService:
         if not sanitized_table:
             raise ValueError(f"Nome de tabela inválido: {table_name}")
 
-        query = f"CREATE OR REPLACE VIEW {sanitized_table} AS SELECT * FROM read_csv_auto('{path.as_posix()}')"
+        # Converte para UTF-8 se necessário
+        load_path, was_converted = self._ensure_utf8(path)
+
         try:
+            # Remove objeto existente com o mesmo nome (TABLE ou VIEW)
+            existing = self.conn.execute(
+                "SELECT table_type FROM information_schema.tables WHERE table_name = ?",
+                [sanitized_table],
+            ).fetchone()
+            if existing:
+                obj_type = existing[0]
+                if obj_type == "VIEW":
+                    self.conn.execute(f'DROP VIEW IF EXISTS "{sanitized_table}"')
+                else:
+                    self.conn.execute(f'DROP TABLE IF EXISTS "{sanitized_table}"')
+
+            query = (
+                f'CREATE OR REPLACE TABLE "{sanitized_table}" AS '
+                f"SELECT * FROM read_csv_auto('{load_path.as_posix()}')"
+            )
             self.conn.execute(query)
-            logger.info(f"View '{sanitized_table}' criada com sucesso a partir de {path.name}")
+            logger.info(
+                f"Tabela '{sanitized_table}' criada com sucesso no DuckDB "
+                f"a partir de {path.name}"
+            )
         except duckdb.Error as e:
-            logger.error(f"Falha ao registrar VIEW do CSV '{path}': {e}")
-            raise SQLExecutionError(f"Não foi possível carregar o CSV '{path.name}': {e!s}") from e
+            logger.error(f"Falha ao registrar TABLE do CSV '{path}': {e}")
+            raise SQLExecutionError(
+                f"Não foi possível carregar o CSV '{path.name}': {e!s}"
+            ) from e
+        finally:
+            # Remove o arquivo temporário UTF-8 se foi criado
+            if was_converted and load_path.exists():
+                try:
+                    load_path.unlink()
+                except Exception:
+                    pass
 
     def get_table_schema(self, table_name: str) -> list[dict[str, str]]:
         """Retorna os nomes de colunas e tipos de dados de uma tabela/view no DuckDB."""
         sanitized_table = "".join(c for c in table_name if c.isalnum() or c == "_")
         try:
-            res = self.conn.execute(f"DESCRIBE {sanitized_table}").fetchall()
+            res = self.conn.execute(f'DESCRIBE "{sanitized_table}"').fetchall()
+
             return [{"column_name": row[0], "column_type": str(row[1])} for row in res]
         except duckdb.Error as e:
             raise SQLExecutionError(f"Erro ao obter esquema da tabela '{table_name}': {e!s}") from e

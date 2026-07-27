@@ -40,13 +40,17 @@ def test_upload_zip_no_csv(client: TestClient, sample_zip_no_csv: Path) -> None:
 
 
 def test_upload_zip_no_dict(client: TestClient, sample_zip_no_dict: Path) -> None:
-    """Testa upload de ZIP sem dicionário de dados (espera HTTP 422 / NO_DICTIONARY)."""
+    """Testa upload de ZIP sem dicionário explícito (aceita com metadados auto-gerados — HTTP 200)."""
     with open(sample_zip_no_dict, "rb") as f:
         response = client.post("/upload", files={"file": ("no_dict.zip", f, "application/zip")})
 
-    assert response.status_code == 422
+    assert response.status_code == 200
     data = response.json()
-    assert data["code"] == "NO_DICTIONARY"
+    assert data["status"] == "success"
+    assert "dataset_id" in data
+
+
+
 
 
 def test_upload_invalid_extension(client: TestClient) -> None:

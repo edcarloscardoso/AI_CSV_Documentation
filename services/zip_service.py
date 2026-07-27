@@ -8,9 +8,9 @@ from pathlib import Path
 
 from loguru import logger
 
-from api.exceptions import FileTooLargeError, InvalidZipError, NoCSVFoundError, NoDictionaryError
+from api.exceptions import FileTooLargeError, InvalidZipError, NoCSVFoundError
 
-DEFAULT_MAX_ZIP_SIZE_MB = 200
+DEFAULT_MAX_ZIP_SIZE_MB = 500
 
 
 @dataclass
@@ -32,11 +32,13 @@ class ZipService:
     def validate_and_extract(self, zip_path: str | Path, dest_dir: str | Path) -> ZipExtractionResult:
         """Valida o tamanho, verifica a integridade do ZIP, previne Path Traversal e extrai os arquivos.
 
+        O dicionário de dados é OPCIONAL. Quando ausente, o sistema gera metadados
+        automaticamente a partir dos nomes das colunas dos CSVs extraídos.
+
         Lança:
             InvalidZipError: Se o arquivo não puder ser lido como ZIP.
             FileTooLargeError: Se o ZIP exceder o limite de tamanho configurado.
             NoCSVFoundError: Se nenhum arquivo .csv for localizado.
-            NoDictionaryError: Se nenhum dicionário de dados for localizado.
         """
         zip_file_path = Path(zip_path).resolve()
         destination = Path(dest_dir).resolve()
@@ -81,12 +83,17 @@ class ZipService:
         if not csv_files:
             raise NoCSVFoundError("Nenhum arquivo .csv foi encontrado no pacote ZIP fornecido.")
 
-        # Localiza dicionário de dados (arquivos contendo 'dicionario', 'dict', 'schema' ou extensão .txt/.json/.md)
+        # Localiza dicionário de dados (opcional)
         dictionary_file = self._find_dictionary_file(all_extracted_files)
-        if not dictionary_file:
-            raise NoDictionaryError("Nenhum dicionário de dados (arquivo .txt, .json ou .md) foi localizado no ZIP.")
-
-        dictionary_data = self._parse_dictionary_file(dictionary_file)
+        if dictionary_file:
+            dictionary_data = self._parse_dictionary_file(dictionary_file)
+            logger.info(f"Dicionário de dados localizado: '{dictionary_file.name}'")
+        else:
+            logger.info(
+                "Nenhum dicionário explícito no ZIP. "
+                "Metadados serão inferidos automaticamente dos cabeçalhos dos CSVs."
+            )
+            dictionary_data = {}
 
         return ZipExtractionResult(
             extract_dir=destination,

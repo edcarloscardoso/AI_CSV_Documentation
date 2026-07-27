@@ -8,7 +8,6 @@ from api.exceptions import (
     DatasetNotFoundError,
     InvalidZipError,
     NoCSVFoundError,
-    NoDictionaryError,
     UnsafeQueryError,
 )
 from services.catalog_service import CatalogService
@@ -101,8 +100,12 @@ class TestZipService:
     def test_extract_zip_no_dict(self, sample_zip_no_dict: Path, tmp_path: Path) -> None:
         zip_service = ZipService()
         dest = tmp_path / "extracted_no_dict"
-        with pytest.raises(NoDictionaryError):
-            zip_service.validate_and_extract(sample_zip_no_dict, dest)
+        result = zip_service.validate_and_extract(sample_zip_no_dict, dest)
+
+        # Dicionário ausente é aceito: metadados serão inferidos dos cabeçalhos dos CSVs
+        assert len(result.csv_files) >= 1
+        assert result.dictionary_file is None
+        assert result.dictionary_data == {}
 
     def test_extract_corrupted_zip(self, tmp_path: Path) -> None:
         bad_zip = tmp_path / "bad.zip"
