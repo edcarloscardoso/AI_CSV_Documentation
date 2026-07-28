@@ -306,15 +306,17 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
     # Seção 5: Instruções de Inicialização com uv
     story.append(Paragraph("5. Instruções de Execução via Gerenciador uv", h1_style))
     cmd_text = (
-        "# 1. Instalar uv (se necessário)\n"
+        "# 1. Instalar o gerenciador uv (se necessário)\n"
         "curl -LsSf https://astral.sh/uv/install.sh | sh\n\n"
         "# 2. Criar ambiente virtual e instalar dependências\n"
         "uv venv && source .venv/bin/activate && uv pip install -r requirements.txt\n\n"
-        "# 3. Executar Backend FastAPI (Terminal 1)\n"
+        "# 3. Configurar variáveis de ambiente (.env)\n"
+        "cp .env.example .env  # Configurar GOOGLE_API_KEY no arquivo .env\n\n"
+        "# 4. Executar Backend FastAPI (Terminal 1)\n"
         "uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload\n\n"
-        "# 4. Executar Frontend Streamlit (Terminal 2)\n"
+        "# 5. Executar Frontend Streamlit (Terminal 2)\n"
         "uv run streamlit run app_streamlit.py\n\n"
-        "# 5. Executar Suíte de Testes Automatizados\n"
+        "# 6. Executar Suíte de Testes Automatizados (Pytest)\n"
         "uv run pytest -v"
     )
     story.append(Paragraph(cmd_text.replace("\n", "<br/>"), code_style))
