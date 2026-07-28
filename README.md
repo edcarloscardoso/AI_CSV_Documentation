@@ -72,10 +72,26 @@ uv run streamlit run app_streamlit.py
 
 Acesse a interface gráfica no navegador em: `http://localhost:8501`.
 
-### 5. Execução da Suíte de Testes
+### 5. Execução da Suíte de Testes (Unitários & E2E)
 
 ```bash
 uv run pytest -v
 ```
 
-Consulte `07-roadmap/IMPLEMENTATION_PLAN.md` para o plano de execução detalhado em sprints.
+### 6. Geração do Relatório Técnico em PDF
+
+Para gerar o arquivo oficial em PDF `Relatorio_Tecnico_AI_CSV_Query.pdf`:
+
+```bash
+uv run python scripts/generate_pdf_report.py
+```
+
+### 7. Empacotamento para Entrega (ZIP)
+
+Para gerar o pacote limpo do código-fonte `entrega_desafio4_ai_csv_query.zip`:
+
+```bash
+uv run python scripts/package_delivery.py
+```
+
+Consulte `07-roadmap/IMPLEMENTATION_PLAN.md` para o roadmap completo de execução por sprints.

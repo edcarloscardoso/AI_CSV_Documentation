@@ -2,6 +2,7 @@
 data/
 *.duckdb
 *.sqlite
+*.zip
 grafico_preview.html
 
 # Uploads temporários

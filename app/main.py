@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from pathlib import Path
+
 from loguru import logger
 
 from api.exceptions import AppBaseError
@@ -13,6 +15,11 @@ from api.routes import datasets_router, query_router, upload_router
 
 # Carrega variáveis de ambiente
 load_dotenv()
+
+# Configura sink de logs em arquivo
+log_dir = Path("logs")
+log_dir.mkdir(exist_ok=True)
+logger.add(log_dir / "app.log", rotation="10 MB", retention="7 days", level="INFO")
 
 app = FastAPI(
     title="AI CSV Query API",
