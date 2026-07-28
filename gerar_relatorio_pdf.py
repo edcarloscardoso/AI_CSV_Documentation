@@ -116,10 +116,10 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
     cell_code = ParagraphStyle(
         "CellCode",
         parent=styles["Normal"],
-        fontName="Courier",
-        fontSize=7.5,
-        leading=10,
-        textColor=colors.HexColor("#0F172A"),
+        fontName="Helvetica",
+        fontSize=8,
+        leading=11,
+        textColor=dark_gray,
     )
 
     story = []
