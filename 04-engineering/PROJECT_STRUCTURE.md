@@ -91,19 +91,24 @@ LLM_TIMEOUT_SECONDS=60
 ## Como Executar
 
 ```bash
-# 1. Instalar dependências
-pip install -r requirements.txt
+# 1. Instalar uv (se não possuir no sistema)
+# Linux/macOS: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Criar ambiente e instalar dependências com uv
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
 
 # 2. Configurar variáveis de ambiente
 cp .env.example .env
 # editar .env com sua GOOGLE_API_KEY
 
 # 3. Iniciar backend
-uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 8000
 
 # 4. Iniciar frontend (em outro terminal)
-streamlit run frontend/app.py
+uv run streamlit run app_streamlit.py
 
 # 5. Rodar testes
-pytest tests/ -v
+uv run pytest tests/ -v
 ```

@@ -2,6 +2,10 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["app", "api", "agents", "services", "tools"]
+
+
 [project]
 name = "ai-csv-query"
 version = "0.1.0"
@@ -35,6 +39,10 @@ minversion = "8.0"
 addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
 pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning:google.genai.*",
+]
+
 
 [tool.ruff]
 line-length = 100
