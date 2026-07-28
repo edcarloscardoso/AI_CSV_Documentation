@@ -24,9 +24,12 @@ REGRAS OBRIGATÓRIAS (nunca viole):
 1. Sempre chame `schema_tool` antes de qualquer outra ação para entender a estrutura dos dados.
 2. Nunca responda uma pergunta de dados sem chamar `sql_tool`. Você não inventa dados.
 3. Se o resultado do SQL for vazio (0 linhas), informe o usuário claramente que não há dados.
-4. Em caso de erro no SQL, tente corrigir e executar novamente uma única vez.
+4. Em caso de erro no SQL (ex: tipo de dado incompatível), tente corrigir e executar novamente uma única vez.
 5. Sempre inclua o SQL utilizado na resposta (campo sql_used).
 6. Responda sempre no mesmo idioma da pergunta do usuário.
+7. CONVERSÃO DE TIPOS EM COLUNAS VARCHAR (IMPORTANTE):
+   - Se uma coluna contendo valores numéricos ou monetários estiver como `VARCHAR` ou `TEXT` no DuckDB (ex: '1234.56' ou '1.234,56'), você NUNCA deve aplicar `SUM(coluna)` diretamente.
+   - Use SEMPRE conversão de tipo explícita com tratamento de formatação brasileira: `TRY_CAST(REPLACE(REPLACE(CAST(coluna AS VARCHAR), '.', ''), ',', '.') AS DOUBLE)` ou `TRY_CAST(coluna AS DOUBLE)` antes de funções de agregação como `SUM()`, `AVG()`, `MIN()`, `MAX()`.
 
 FORMATO DA RESPOSTA:
 - 1 valor único -> texto explicativo (answer_type="text")
@@ -126,7 +129,7 @@ class OrchestratorAgent:
             try:
                 return sql_tool(query, dataset_id, self.duckdb_service)
             except Exception as e:
-                return {"error": f"Falha na execução do SQL: {e!s}. Tente corrigir a sintaxe da consulta."}
+                return {"error": f"Falha na execução do SQL: {e!s}. Tente aplicar TRY_CAST(REPLACE(coluna, ',', '.') AS DOUBLE) para colunas de texto."}
 
         @agent.tool_plain
         def get_stats(table: str, column: str) -> dict[str, Any]:
@@ -186,15 +189,15 @@ class OrchestratorAgent:
         category_match = find_col(["categoria", "ncm", "tipo_produto", "natureza"])
         date_match = find_col(
             ["data", "emissao", "emissão", "dt_", "mes", "mês"],
-            prefer_types=["TIMESTAMP", "DATE", "DATETIME"],
+            prefer_types=["TIMESTAMP", "DATE", "DATETIME", "VARCHAR", "TEXT"],
         )
         val_match = find_col(
             ["valor", "total", "gasto", "preco", "preço"],
-            prefer_types=["DOUBLE", "FLOAT", "BIGINT", "INTEGER", "DECIMAL", "NUMERIC"],
+            prefer_types=["DOUBLE", "FLOAT", "BIGINT", "INTEGER", "DECIMAL", "NUMERIC", "VARCHAR", "TEXT"],
         )
         qty_match = find_col(
             ["quantidade", "volume", "qtd"],
-            prefer_types=["DOUBLE", "FLOAT", "BIGINT", "INTEGER", "DECIMAL", "NUMERIC"],
+            prefer_types=["DOUBLE", "FLOAT", "BIGINT", "INTEGER", "DECIMAL", "NUMERIC", "VARCHAR", "TEXT"],
         )
 
         query = None
@@ -202,29 +205,36 @@ class OrchestratorAgent:
         answer_type = "text"
         chart_spec_obj = None
 
+        # Função auxiliar para gerar expressão de soma segura com cast
+        def safe_sum(col: str) -> str:
+            return f"ROUND(SUM(COALESCE(TRY_CAST(\"{col}\" AS DOUBLE), TRY_CAST(REPLACE(REPLACE(CAST(\"{col}\" AS VARCHAR), '.', ''), ',', '.') AS DOUBLE), 0)), 2)"
+
         # Intenção 1: Fornecedores (maior valor ou top 5)
         if ("fornecedor" in q_lower or "emitente" in q_lower) and supplier_match and val_match:
             tbl_s, col_s = supplier_match
             _, col_v = val_match
+            sum_expr = safe_sum(col_v)
             if any(w in q_lower for w in ["cinco", "5", "maiores", "principais"]):
-                query = f'SELECT "{col_s}" AS fornecedor, ROUND(SUM("{col_v}"), 2) AS total_valor FROM {tbl_s} GROUP BY "{col_s}" ORDER BY total_valor DESC LIMIT 5'
+                query = f'SELECT "{col_s}" AS fornecedor, {sum_expr} AS total_valor FROM {tbl_s} GROUP BY "{col_s}" ORDER BY total_valor DESC LIMIT 5'
                 answer_type = "table"
             else:
-                query = f'SELECT "{col_s}" AS fornecedor, ROUND(SUM("{col_v}"), 2) AS total_valor FROM {tbl_s} GROUP BY "{col_s}" ORDER BY total_valor DESC LIMIT 1'
+                query = f'SELECT "{col_s}" AS fornecedor, {sum_expr} AS total_valor FROM {tbl_s} GROUP BY "{col_s}" ORDER BY total_valor DESC LIMIT 1'
                 answer_type = "text"
 
         # Intenção 2: Produtos (maior volume / maior quantidade)
         elif ("produto" in q_lower or "item" in q_lower) and product_match and (qty_match or val_match):
             tbl_p, col_p = product_match
             col_q = qty_match[1] if qty_match else val_match[1]
-            query = f'SELECT "{col_p}" AS produto, ROUND(SUM("{col_q}"), 2) AS total_volume FROM {tbl_p} GROUP BY "{col_p}" ORDER BY total_volume DESC LIMIT 1'
+            sum_expr = safe_sum(col_q)
+            query = f'SELECT "{col_p}" AS produto, {sum_expr} AS total_volume FROM {tbl_p} GROUP BY "{col_p}" ORDER BY total_volume DESC LIMIT 1'
             answer_type = "text"
 
         # Intenção 3: Total gasto por mês
         elif ("mês" in q_lower or "mes" in q_lower or "mensal" in q_lower) and date_match and val_match:
             tbl_d, col_d = date_match
             _, col_v = val_match
-            query = f'SELECT strftime(\'%Y-%m\', TRY_CAST("{col_d}" AS TIMESTAMP)) AS mes, ROUND(SUM("{col_v}"), 2) AS total_gasto FROM {tbl_d} WHERE "{col_d}" IS NOT NULL GROUP BY mes ORDER BY mes'
+            sum_expr = safe_sum(col_v)
+            query = f'SELECT strftime(\'%Y-%m\', TRY_CAST("{col_d}" AS TIMESTAMP)) AS mes, {sum_expr} AS total_gasto FROM {tbl_d} WHERE "{col_d}" IS NOT NULL GROUP BY mes ORDER BY mes'
             answer_type = "chart"
 
         # Intenção 4: Categoria (maior crescimento / maior volume de compras)
@@ -234,7 +244,8 @@ class OrchestratorAgent:
             cat_target = category_match or product_match
             tbl_c, col_c = cat_target
             _, col_v = val_match
-            query = f'SELECT "{col_c}" AS categoria, ROUND(SUM("{col_v}"), 2) AS total FROM {tbl_c} GROUP BY "{col_c}" ORDER BY total DESC LIMIT 5'
+            sum_expr = safe_sum(col_v)
+            query = f'SELECT "{col_c}" AS categoria, {sum_expr} AS total FROM {tbl_c} GROUP BY "{col_c}" ORDER BY total DESC LIMIT 5'
             answer_type = "table"
 
         # Fallback genérico se nenhuma intenção específica for identificada
