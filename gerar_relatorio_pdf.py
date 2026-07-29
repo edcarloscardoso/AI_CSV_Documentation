@@ -221,9 +221,9 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
 
     chart_raw = [
         ["Tipo de Gráfico", "Propósito Analítico", "Regra de Seleção Automática"],
-        ["📊 Barras (bar)", "Rankings de desempenho (Top N) e comparações entre categorias.", "Perguntas de ranking (ex: 'Top 5 fornecedores') ou comparação categórica."],
-        ["📈 Linhas (line)", "Séries temporais, evolução histórica e tendências ao longo do tempo.", "Detecção de datas/meses ou termos como 'evolução', 'tendência' ou 'mensal'."],
-        ["🍕 Pizza (pie)", "Distribuição proporcional, participação percentual e composição.", "Presença dos termos 'pizza', 'proporção', 'distribuição' ou poucas categorias (≤6)."],
+        ["Barras (bar)", "Rankings de desempenho (Top N) e comparações entre categorias.", "Perguntas de ranking (ex: 'Top 5 fornecedores') ou comparação categórica."],
+        ["Linhas (line)", "Séries temporais, evolução histórica e tendências ao longo do tempo.", "Detecção de datas/meses ou termos como 'evolução', 'tendência' ou 'mensal'."],
+        ["Pizza (pie)", "Distribuição proporcional, participação percentual e composição.", "Presença dos termos 'pizza', 'proporção', 'distribuição' ou poucas categorias (≤6)."],
     ]
 
     chart_data = []
@@ -246,23 +246,42 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
         ])
     )
     story.append(chart_table)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 6))
 
-    # Diagrama ASCII de Fluxo do Motor de Gráficos (Engine Flow)
+    # Tabela Visual de Fluxo de Execução do Motor (Engine Flow)
     story.append(Paragraph("<b>Fluxo de Execução Desacoplado do Motor (Engine Flow):</b>", body_style))
-    engine_flow_ascii = (
-        "[ Pergunta (Linguagem Natural) ]\n"
-        "             │\n"
-        "             ▼\n"
-        "[ PydanticAI Orchestrator ] ──(Sintaxe SQL)──► [ DuckDB Engine (OLAP local - Zero LLM Leak) ]\n"
-        "             │                                                     │\n"
-        "             ▼                                                     ▼\n"
-        "[ chart_tool (Inferência & Plotly JSON) ] ◄────────────── [ Resultado SQL ]\n"
-        "             │\n"
-        "             ▼\n"
-        "[ Streamlit UI (Renderização Reativa Plotly) ]"
-    )
-    story.append(Paragraph(engine_flow_ascii.replace("\n", "<br/>").replace(" ", "&nbsp;"), code_style))
+    story.append(Spacer(1, 3))
+
+    flow_items = [
+        ("Etapa 1", "Pergunta do Usuário (Linguagem Natural)", "Entrada livre em português (ex: 'Qual o total gasto em cada mês?').", "#EFF6FF", "#93C5FD"),
+        ("Etapa 2", "PydanticAI Orchestrator", "Analisa a semântica e sintetiza consulta SQL Read-Only (Apenas metadados e esquemas enviados ao LLM).", "#EFF6FF", "#93C5FD"),
+        ("Etapa 3", "DuckDB OLAP Engine (Processamento Local)", "Executa a consulta SQL em memória isolada local com altíssima performance (<b>Zero Data Exposure ao LLM</b>).", "#ECFDF5", "#6EE7B7"),
+        ("Etapa 4", "chart_tool (Plotly Engine)", "Inferência de tipos de colunas e intenção semântica para geração da especificação Plotly JSON (Barras, Linhas ou Pizza).", "#EFF6FF", "#93C5FD"),
+        ("Etapa 5", "Streamlit Frontend (Interface Reativa)", "Renderização gráfica interativa com suporte a Zoom, Hover, Filtros e Exportação PNG.", "#F5F3FF", "#C4B5FD"),
+    ]
+
+    flow_table_data = []
+    table_styles = [
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+    ]
+
+    row_idx = 0
+    for idx, (step, comp, desc, bg_hex, border_hex) in enumerate(flow_items):
+        cell_text = f"<b>[{step}] {comp}</b><br/><font color='#334155'>{desc}</font>"
+        cell_para = Paragraph(cell_text, cell_body)
+        flow_table_data.append([cell_para])
+
+        table_styles.extend([
+            ("BACKGROUND", (0, row_idx), (0, row_idx), colors.HexColor(bg_hex)),
+            ("BOX", (0, row_idx), (0, row_idx), 1, colors.HexColor(border_hex)),
+            ("PADDING", (0, row_idx), (0, row_idx), 4),
+        ])
+        row_idx += 1
+
+    flow_table = Table(flow_table_data, colWidths=[7.25 * inch])
+    flow_table.setStyle(TableStyle(table_styles))
+    story.append(flow_table)
     story.append(Spacer(1, 8))
 
     # Seção 4: Segurança & Prevenção de Injeções
