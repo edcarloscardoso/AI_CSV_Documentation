@@ -1,4 +1,4 @@
-"""Script autônomo para gerar o Relatório Técnico PDF oficial do projeto AI CSV Query (Desafio 4 - I2A2)."""
+"""Script autônomo para gerar o Relatório Técnico e de Negócios PDF oficial do projeto AI CSV Query (Desafio 4 - I2A2)."""
 
 import os
 from pathlib import Path
@@ -19,8 +19,8 @@ from reportlab.platypus import (
 
 
 def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf") -> str:
-    """Gera o arquivo PDF de relatório técnico e arquitetural do projeto com formatação responsiva de margens."""
-    # A4: 595.27 x 841.89 pt (8.27 x 11.69 in). Margens de 36pt (0.5in) -> Largura útil: ~523pt (~7.26in)
+    """Gera o arquivo PDF de relatório técnico, de negócios e arquitetural do projeto."""
+    # A4: 595.27 x 841.89 pt. Margens de 36pt (0.5in) -> Largura útil: ~523pt (~7.26in)
     doc = SimpleDocTemplate(
         output_filename,
         pagesize=A4,
@@ -43,8 +43,8 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
         "DocTitle",
         parent=styles["Title"],
         fontName="Helvetica-Bold",
-        fontSize=20,
-        leading=24,
+        fontSize=18,
+        leading=22,
         textColor=primary_color,
         alignment=0,
         spaceAfter=4,
@@ -54,53 +54,53 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
         "DocSubTitle",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=10.5,
-        leading=14,
+        fontSize=10,
+        leading=13,
         textColor=colors.HexColor("#4B5563"),
-        spaceAfter=12,
+        spaceAfter=10,
     )
 
     h1_style = ParagraphStyle(
         "Heading1_Custom",
         parent=styles["Heading1"],
         fontName="Helvetica-Bold",
-        fontSize=13,
-        leading=16,
+        fontSize=12,
+        leading=15,
         textColor=primary_color,
-        spaceBefore=12,
-        spaceAfter=6,
+        spaceBefore=10,
+        spaceAfter=5,
     )
 
     body_style = ParagraphStyle(
         "Body_Custom",
         parent=styles["BodyText"],
         fontName="Helvetica",
-        fontSize=9,
-        leading=13,
+        fontSize=8.5,
+        leading=12,
         textColor=dark_gray,
-        spaceAfter=6,
+        spaceAfter=5,
     )
 
     code_style = ParagraphStyle(
         "Code_Custom",
         parent=styles["Normal"],
         fontName="Courier",
-        fontSize=8,
-        leading=10.5,
+        fontSize=7.5,
+        leading=10,
         textColor=colors.HexColor("#0F172A"),
         backColor=code_bg,
-        borderPadding=6,
-        spaceBefore=4,
-        spaceAfter=6,
+        borderPadding=5,
+        spaceBefore=3,
+        spaceAfter=5,
     )
 
-    # Estilos de Células de Tabela (Garante que TODO texto quebre linhas dentro das margens)
+    # Estilos de Células de Tabela
     cell_header = ParagraphStyle(
         "CellHeader",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=8.5,
-        leading=11,
+        fontSize=8,
+        leading=10.5,
         textColor=colors.white,
     )
 
@@ -108,8 +108,8 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
         "CellBody",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=8,
-        leading=11,
+        fontSize=7.5,
+        leading=10.5,
         textColor=dark_gray,
     )
 
@@ -117,22 +117,22 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
         "CellCode",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=8,
-        leading=11,
+        fontSize=7.5,
+        leading=10.5,
         textColor=dark_gray,
     )
 
     story = []
 
     # Cabeçalho Principal
-    story.append(Paragraph("AI CSV Query System — Relatório Técnico", title_style))
-    story.append(Paragraph("<b>Desafio 4 (I2A2)</b> — Plataforma de Consulta Inteligente de CSVs via Agentes de IA", subtitle_style))
-    story.append(HRFlowable(width="100%", thickness=2, color=secondary_color, spaceBefore=0, spaceAfter=12))
+    story.append(Paragraph("AI CSV Query System — Relatório Técnico & de Negócios", title_style))
+    story.append(Paragraph("<b>Desafio 4 (I2A2)</b> — Plataforma de Autosserviço de BI e Consulta de CSVs via Agentes de IA", subtitle_style))
+    story.append(HRFlowable(width="100%", thickness=2, color=secondary_color, spaceBefore=0, spaceAfter=8))
 
     # Métricas de Resumo
     summary_raw = [
         [
-            "<b>Data da Emissão:</b> 28/07/2026",
+            "<b>Data de Emissão:</b> 28/07/2026",
             "<b>Status:</b> Concluído (100% Pass)",
             "<b>Suíte de Testes:</b> 34 Testes Aprovados",
         ]
@@ -144,35 +144,49 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
             ("BACKGROUND", (0, 0), (-1, -1), light_bg),
             ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#CBD5E1")),
             ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
-            ("PADDING", (0, 0), (-1, -1), 6),
+            ("PADDING", (0, 0), (-1, -1), 5),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ])
     )
     story.append(summary_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
-    # Seção 1: Visão Geral da Arquitetura
-    story.append(Paragraph("1. Visão Geral da Arquitetura & Tecnologias", h1_style))
+    # Seção 1: Proposta de Valor & Negócio
+    story.append(Paragraph("1. Proposta de Valor & Alinhamento de Negócio", h1_style))
     story.append(
         Paragraph(
-            "O <b>AI CSV Query System</b> foi desenvolvido com uma arquitetura desacoplada em 4 camadas "
-            "com separação rigorosa de responsabilidades. O modelo LLM atua estritamente como cérebro de raciocínio, "
-            "enquanto todas as leituras de esquemas, consultas SQL e gerações de gráficos são executadas deterministicamente por ferramentas isoladas (Tools).",
+            "O <b>AI CSV Query System</b> resolve o desafio de democratização de dados em ambientes corporativos. "
+            "Ele capacita profissionais de negócios, auditores e gestores a realizar análises ad-hoc complexas diretamente em arquivos CSV "
+            "usando linguagem natural, sem necessidade de aprender SQL ou depender de filas de chamados da equipe de BI.<br/>"
+            "<b>Benefícios Chave de Negócio:</b><br/>"
+            "• <b>Autosserviço de BI (Self-Service BI / No-Code):</b> Permite a exploração direta de dados operacionais sem necessidade de codificação ou consultas manuais.<br/>"
+            "• <b>Redução do Tempo até o Insight (Time-to-Insight):</b> Reduz o ciclo de obtenção de respostas de dias/semanas para poucos segundos, disponibilizando resumos em texto, tabelas e gráficos interativos.<br/>"
+            "• <b>Governança e Segurança de Dados (Zero Data Exposure):</b> Garantia de conformidade corporativa. Os arquivos CSV brutos permanecem isolados no DuckDB local e <b>nunca são enviados ou expostos ao LLM</b>. O modelo de IA recebe apenas os metadados de esquemas para síntese de consultas SQL.",
+            body_style,
+        )
+    )
+    story.append(Spacer(1, 6))
+
+    # Seção 2: Arquitetura Tecnológica
+    story.append(Paragraph("2. Visão Geral da Arquitetura & Stack Tecnológico", h1_style))
+    story.append(
+        Paragraph(
+            "A arquitetura foi projetada em 4 camadas desacopladas seguindo a premissa de que o LLM atua estritamente como "
+            "orquestrador semântico, enquanto a consulta aos dados e a geração de visualizações ocorrem de forma 100% determinística via ferramentas isoladas.",
             body_style,
         )
     )
 
     tech_raw = [
         ["Camada", "Tecnologia", "Função & Racional Arquitetural"],
-        ["Frontend", "Streamlit", "Interface web reativa com abas para Chat, Upload de ZIP e exibição de esquemas."],
+        ["Frontend", "Streamlit", "Interface reativa para upload de ZIP, chat interativo e exibição de esquemas e gráficos."],
         ["Backend", "FastAPI", "API RESTful assíncrona, com rotas /upload, /ask, /datasets e /health."],
-        ["Orquestração", "PydanticAI", "Framework type-safe para agentes de IA, schema-first e tool calling com Gemini."],
-        ["Motor OLAP", "DuckDB", "Banco SQL em memória de alta performance para processar CSVs brutos."],
+        ["Orquestração", "PydanticAI", "Framework type-safe para agentes de IA com tool calling estruturado."],
+        ["Motor OLAP", "DuckDB", "Banco SQL em memória de altíssimo desempenho para consultas em arquivos CSV."],
         ["Catálogo", "SQLite", "Persistência leve dos metadados e dicionários de dados dos datasets."],
         ["Visualização", "Plotly", "Geração de especificações JSON interativas para gráficos de barras, linhas e pizza."],
     ]
 
-    # Converte tudo em Paragraphs para garantir quebras dentro da coluna
     tech_data = []
     for idx, row in enumerate(tech_raw):
         row_cells = []
@@ -181,7 +195,6 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
             row_cells.append(Paragraph(cell_text, st))
         tech_data.append(row_cells)
 
-    # Larguras somam 7.25 in (ajustado perfeitamente à largura A4 de 7.26 in)
     tech_table = Table(tech_data, colWidths=[1.1 * inch, 1.2 * inch, 4.95 * inch])
     tech_table.setStyle(
         TableStyle([
@@ -190,32 +203,88 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, light_bg]),
             ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#94A3B8")),
             ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-            ("PADDING", (0, 0), (-1, -1), 5),
+            ("PADDING", (0, 0), (-1, -1), 4),
         ])
     )
     story.append(tech_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
-    # Seção 2: Segurança & Prevenção de Injeções
-    story.append(Paragraph("2. Segurança e Tratamento de Dados", h1_style))
+    # Seção 3: Motor de Visualização & Gráficos
+    story.append(Paragraph("3. Motor de Visualização & Geração de Gráficos", h1_style))
+    story.append(
+        Paragraph(
+            "O componente <code>chart_tool</code> analisa semanticamente o resultado das consultas SQL e a intenção da pergunta do usuário "
+            "para gerar especificações de gráficos declarativos em formato Plotly JSON:",
+            body_style,
+        )
+    )
+
+    chart_raw = [
+        ["Tipo de Gráfico", "Propósito Analítico", "Regra de Seleção Automática"],
+        ["📊 Barras (bar)", "Rankings de desempenho (Top N) e comparações entre categorias.", "Perguntas de ranking (ex: 'Top 5 fornecedores') ou comparação categórica."],
+        ["📈 Linhas (line)", "Séries temporais, evolução histórica e tendências ao longo do tempo.", "Detecção de datas/meses ou termos como 'evolução', 'tendência' ou 'mensal'."],
+        ["🍕 Pizza (pie)", "Distribuição proporcional, participação percentual e composição.", "Presença dos termos 'pizza', 'proporção', 'distribuição' ou poucas categorias (≤6)."],
+    ]
+
+    chart_data = []
+    for idx, row in enumerate(chart_raw):
+        row_cells = []
+        for col_idx, cell_text in enumerate(row):
+            st = cell_header if idx == 0 else cell_body
+            row_cells.append(Paragraph(cell_text, st))
+        chart_data.append(row_cells)
+
+    chart_table = Table(chart_data, colWidths=[1.5 * inch, 2.5 * inch, 3.25 * inch])
+    chart_table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), primary_color),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, light_bg]),
+            ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#94A3B8")),
+            ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+            ("PADDING", (0, 0), (-1, -1), 4),
+        ])
+    )
+    story.append(chart_table)
+    story.append(Spacer(1, 4))
+
+    # Diagrama ASCII de Fluxo do Motor de Gráficos (Engine Flow)
+    story.append(Paragraph("<b>Fluxo de Execução Desacoplado do Motor (Engine Flow):</b>", body_style))
+    engine_flow_ascii = (
+        "[ Pergunta (Linguagem Natural) ]\n"
+        "             │\n"
+        "             ▼\n"
+        "[ PydanticAI Orchestrator ] ──(Sintaxe SQL)──► [ DuckDB Engine (OLAP local - Zero LLM Leak) ]\n"
+        "             │                                                     │\n"
+        "             ▼                                                     ▼\n"
+        "[ chart_tool (Inferência & Plotly JSON) ] ◄────────────── [ Resultado SQL ]\n"
+        "             │\n"
+        "             ▼\n"
+        "[ Streamlit UI (Renderização Reativa Plotly) ]"
+    )
+    story.append(Paragraph(engine_flow_ascii.replace("\n", "<br/>").replace(" ", "&nbsp;"), code_style))
+    story.append(Spacer(1, 8))
+
+    # Seção 4: Segurança & Prevenção de Injeções
+    story.append(Paragraph("4. Segurança e Tratamento de Dados", h1_style))
     story.append(
         Paragraph(
             "<b>• Bloqueio de DDL/DML (SQL Injection):</b> A ferramenta <code>sql_tool</code> analisa a sintaxe SQL antes de executar. "
             "Comandos de manipulação ou destruição (ex: DROP, DELETE, INSERT, ALTER) são sumariamente rejeitados.<br/>"
-            "<b>• Prevenção contra Zip Slip:</b> A extração de pacotes ZIP valida rigorosamente o caminho de destino de cada arquivo, "
-            "garantindo que nenhum arquivo seja extraído fora do diretório temporário isolado.<br/>"
+            "<b>• Prevenção contra Zip Slip:</b> A extração de pacotes ZIP valida o caminho de destino de cada arquivo (canonical path), "
+            "garantindo que nenhum arquivo seja gravado fora do diretório temporário isolado.<br/>"
             "<b>• Conversão de Tipos (VARCHAR ➔ DOUBLE):</b> Tratamento automático de formatos numéricos brasileiros e cast explícito "
             "com <code>TRY_CAST</code> para prevenir erros de agregação (SUM) no DuckDB.",
             body_style,
         )
     )
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
-    # Seção 3: Validação das Perguntas de Demonstração (PRD)
-    story.append(Paragraph("3. Validação das Perguntas de Demonstração (PRD)", h1_style))
+    # Seção 5: Validação das Perguntas de Demonstração (PRD)
+    story.append(Paragraph("5. Validação das Perguntas de Demonstração (PRD)", h1_style))
     story.append(
         Paragraph(
-            "Abaixo estão os resultados obtidos com o dataset oficial <code>202401_NFs.zip</code> para as 5 perguntas requeridas:",
+            "Resultados obtidos com o dataset oficial <code>202401_NFs.zip</code> para as 5 perguntas de negócio do PRD:",
             body_style,
         )
     )
@@ -233,16 +302,10 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
     for idx, row in enumerate(prd_raw):
         row_cells = []
         for col_idx, cell_text in enumerate(row):
-            if idx == 0:
-                st = cell_header
-            elif col_idx == 3:
-                st = cell_code
-            else:
-                st = cell_body
+            st = cell_header if idx == 0 else (cell_code if col_idx == 3 else cell_body)
             row_cells.append(Paragraph(cell_text, st))
         prd_data.append(row_cells)
 
-    # Larguras somam 7.25 in
     prd_table = Table(prd_data, colWidths=[0.35 * inch, 2.2 * inch, 1.1 * inch, 3.6 * inch])
     prd_table.setStyle(
         TableStyle([
@@ -255,10 +318,10 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
         ])
     )
     story.append(prd_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
-    # Seção 4: Cobertura de Testes Automatizados
-    story.append(Paragraph("4. Cobertura da Suíte de Testes (Pytest)", h1_style))
+    # Seção 6: Cobertura de Testes Automatizados
+    story.append(Paragraph("6. Cobertura da Suíte de Testes (Pytest)", h1_style))
 
     tests_raw = [
         ["Arquivo de Teste", "Componente Testado", "Qtd Testes", "Status"],
@@ -288,7 +351,6 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
             row_cells.append(Paragraph(cell_text, st))
         tests_data.append(row_cells)
 
-    # Larguras somam 7.25 in
     tests_table = Table(tests_data, colWidths=[1.7 * inch, 3.45 * inch, 0.9 * inch, 1.2 * inch])
     tests_table.setStyle(
         TableStyle([
@@ -301,30 +363,30 @@ def build_pdf_report(output_filename: str = "Relatorio_Tecnico_AI_CSV_Query.pdf"
         ])
     )
     story.append(tests_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
-    # Seção 5: Instruções de Inicialização com uv
-    story.append(Paragraph("5. Instruções de Execução via Gerenciador uv", h1_style))
+    # Seção 7: Instruções de Execução via Gerenciador uv
+    story.append(Paragraph("7. Instruções de Execução via Gerenciador uv", h1_style))
     cmd_text = (
-        "# 1. Instalar o gerenciador uv (se necessário)\n"
+        "# 1. Instalar o gerenciador uv\n"
         "curl -LsSf https://astral.sh/uv/install.sh | sh\n\n"
         "# 2. Criar ambiente virtual e instalar dependências\n"
         "uv venv && source .venv/bin/activate && uv pip install -r requirements.txt\n\n"
         "# 3. Configurar variáveis de ambiente (.env)\n"
-        "cp .env.example .env  # Configurar GOOGLE_API_KEY no arquivo .env\n\n"
+        "cp .env.example .env  # Inserir GOOGLE_API_KEY no .env\n\n"
         "# 4. Executar Backend FastAPI (Terminal 1)\n"
         "uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload\n\n"
         "# 5. Executar Frontend Streamlit (Terminal 2)\n"
         "uv run streamlit run app_streamlit.py\n\n"
-        "# 6. Executar Suíte de Testes Automatizados (Pytest)\n"
+        "# 6. Executar Suíte de Testes (Pytest)\n"
         "uv run pytest -v"
     )
     story.append(Paragraph(cmd_text.replace("\n", "<br/>"), code_style))
 
     # Conclusão e Assinatura
-    story.append(Spacer(1, 8))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#CBD5E1"), spaceBefore=4, spaceAfter=8))
-    story.append(Paragraph("<b>Relatório aprovado e verificado para entrega do projeto.</b>", body_style))
+    story.append(Spacer(1, 6))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#CBD5E1"), spaceBefore=2, spaceAfter=6))
+    story.append(Paragraph("<b>Relatório técnico e de negócios verificado para entrega do Desafio 4 (I2A2).</b>", body_style))
 
     doc.build(story)
     return output_filename
