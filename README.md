@@ -3,6 +3,10 @@
 > **I2A2 · Desafio 4 · Entrega Oficial**  
 > *Plataforma de Self-Service Business Intelligence impulsionada por Agentes de IA com PydanticAI, DuckDB, FastAPI e Streamlit.*
 
+> [!TIP]
+> 🎈 **Quer instalar e testar em 1 clique sem complicação?**  
+> Veja o nosso **[Guia Super Fácil (MANUAL_SUPER_FACIL.md)](file:///home/edcarlos/workspace/pessoal/AI_CSV_Documentation/MANUAL_SUPER_FACIL.md)** ou dê dois cliques no arquivo **`iniciar.bat`** (Windows) ou execute **`./iniciar.sh`** (Linux/Mac).
+
 ---
 
 ## 💡 Visão de Negócio & Proposta de Valor
